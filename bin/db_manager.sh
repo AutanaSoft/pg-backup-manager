@@ -394,12 +394,20 @@ do_restore() {
         if [ -z "$backup_file" ]; then
             log_message "error" "No se encontró ningún backup para la base de datos $db_name"
             mkdir -p "$backup_dir"
+            return 1
         fi
         
         log_message "info" "Se usará el backup más reciente: $(basename "$backup_file")"
     else
-        # Si se especificó un archivo, verificar si es una ruta completa o solo el nombre
-        if [[ "$backup_file" != /* ]]; then
+        # Si se especificó un archivo, verificar si es una ruta completa, relativa o solo el nombre
+        if [[ "$backup_file" == /* ]]; then
+            # Es una ruta absoluta, usarla tal cual
+            :  # No hacer nada, usar la ruta tal cual
+        elif [[ "$backup_file" == ./* ]] || [[ "$backup_file" == ../* ]]; then
+            # Es una ruta relativa, convertirla a absoluta desde el directorio actual
+            backup_file="$(cd "$(dirname "$backup_file")" && pwd)/$(basename "$backup_file")"
+        else
+            # Es solo un nombre de archivo, añadir la ruta del directorio de backups
             backup_file="$backup_dir/$backup_file"
         fi
         
@@ -407,6 +415,7 @@ do_restore() {
         if [ ! -f "$backup_file" ]; then
             log_message "error" "El archivo de backup '$backup_file' no existe"
             mkdir -p "$backup_dir"
+            return 1
         fi
     fi
     

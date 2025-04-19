@@ -1,0 +1,33 @@
+# Archivos de entorno con credenciales
+config/.env
+
+# Archivos de backup generados
+*.sql
+*.dump
+*.bak
+*.sql.gz
+
+# Directorios de backup
+backups/
+
+# Directorios de pruebas temporales
+tests/test_backups/
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+*~
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Directorios y archivos específicos de editores
+.idea/
+.vscode/
+*.swp
+*.swo

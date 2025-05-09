@@ -76,7 +76,7 @@ This integrated script automates the process of backing up and restoring Postgre
 **Prerequisites:**
 - `git` (for cloning the repository)
 
-1. Clone this repository (replace `<your-repository-url>` with the actual URL or use the one for this project):
+1. Clone this repository:
    ```bash
    git clone git@github.com:AutanaSoft/pg-backup-manager.git
    cd pg-backup-manager

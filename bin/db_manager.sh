@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Definir colores para mensajes
+# Define colors for messages
 GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 RED="\033[0;31m"
 BLUE="\033[0;34m"
 NC="\033[0m" # No Color
 
-# Versión del script
+# Script version
 VERSION="1.0.0"
 
-# Función para mostrar mensajes
+# Function to display messages
 log_message() {
     local type=$1
     local message=$2
@@ -35,108 +35,108 @@ log_message() {
     esac
 }
 
-# Función para mostrar la ayuda general
+# Function to display general help
 show_help() {
     echo -e "${BLUE}PostgreSQL Database Manager${NC} v$VERSION"
-    echo -e "Herramienta para gestionar backups y restauración de bases de datos PostgreSQL\n"
-    echo "Uso: $0 <comando> [opciones]"
+    echo -e "Tool to manage backups and restoration of PostgreSQL databases\n"
+    echo "Usage: $0 <command> [options]"
     echo ""
-    echo "Comandos disponibles:"
-    echo "  backup    Crear un backup de una base de datos"
-    echo "  restore   Restaurar un backup a una base de datos"
-    echo "  list      Listar los backups disponibles"
-    echo "  help      Mostrar esta ayuda"
+    echo "Available commands:"
+    echo "  backup    Create a backup of a database"
+    echo "  restore   Restore a backup to a database"
+    echo "  list      List available backups"
+    echo "  help      Show this help"
     echo ""
-    echo "Para ver las opciones específicas de cada comando, use:"
-    echo "  $0 <comando> --help"
+    echo "To see specific options for each command, use:"
+    echo "  $0 <command> --help"
     echo ""
     exit 0
 }
 
-# Función para mostrar la ayuda del comando backup
+# Function to display backup command help
 show_backup_help() {
-    echo -e "${BLUE}PostgreSQL Database Manager - Comando BACKUP${NC}"
-    echo -e "Crea un backup de una base de datos PostgreSQL\n"
-    echo "Uso: $0 backup [opciones]"
+    echo -e "${BLUE}PostgreSQL Database Manager - BACKUP Command${NC}"
+    echo -e "Creates a backup of a PostgreSQL database\n"
+    echo "Usage: $0 backup [options]"
     echo ""
-    echo "Opciones:"
-    echo "  -db       Nombre de la base de datos a respaldar (opcional si está definido en .env)"
-    echo "  -path     Ruta donde se guardarán los backups (por defecto: 'backups')"
-    echo "  -host     Host de la base de datos (opcional, por defecto: valor en .env o localhost)"
-    echo "  -port     Puerto de la base de datos (opcional, por defecto: valor en .env o 5432)"
-    echo "  -user     Usuario de la base de datos (opcional, por defecto: valor en .env o postgres)"
-    echo "  -pass     Contraseña de la base de datos (opcional, por defecto: valor en .env o postgres)"
-    echo "  -h        Muestra esta ayuda"
+    echo "Options:"
+    echo "  -db       Name of the database to back up (optional if defined in .env)"
+    echo "  -path     Path where backups will be saved (default: 'backups')"
+    echo "  -host     Database host (optional, default: value in .env or localhost)"
+    echo "  -port     Database port (optional, default: value in .env or 5432)"
+    echo "  -user     Database user (optional, default: value in .env or postgres)"
+    echo "  -pass     Database password (optional, default: value in .env or postgres)"
+    echo "  -h        Show this help"
     echo ""
     exit 0
 }
 
-# Función para mostrar la ayuda del comando restore
+# Function to display restore command help
 show_restore_help() {
-    echo -e "${BLUE}PostgreSQL Database Manager - Comando RESTORE${NC}"
-    echo -e "Restaura un backup a una base de datos PostgreSQL\n"
-    echo "Uso: $0 restore [opciones]"
+    echo -e "${BLUE}PostgreSQL Database Manager - RESTORE Command${NC}"
+    echo -e "Restores a backup to a PostgreSQL database\n"
+    echo "Usage: $0 restore [options]"
     echo ""
-    echo "Opciones:"
-    echo "  -db       Nombre de la base de datos a restaurar (opcional si está definido en .env)"
-    echo "  -file     Nombre del archivo de backup a restaurar (si no se especifica, se usará el más reciente)"
-    echo "  -path     Ruta donde se encuentran los backups (por defecto: 'backups')"
-    echo "  -host     Host de la base de datos (opcional, por defecto: valor en .env o localhost)"
-    echo "  -port     Puerto de la base de datos (opcional, por defecto: valor en .env o 5432)"
-    echo "  -user     Usuario de la base de datos (opcional, por defecto: valor en .env o postgres)"
-    echo "  -pass     Contraseña de la base de datos (opcional, por defecto: valor en .env o postgres)"
-    echo "  -h        Muestra esta ayuda"
+    echo "Options:"
+    echo "  -db       Name of the database to restore (optional if defined in .env)"
+    echo "  -file     Name of the backup file to restore (if not specified, the most recent will be used)"
+    echo "  -path     Path where backups are located (default: 'backups')"
+    echo "  -host     Database host (optional, default: value in .env or localhost)"
+    echo "  -port     Database port (optional, default: value in .env or 5432)"
+    echo "  -user     Database user (optional, default: value in .env or postgres)"
+    echo "  -pass     Database password (optional, default: value in .env or postgres)"
+    echo "  -h        Show this help"
     echo ""
     exit 0
 }
 
-# Función para cargar variables de entorno
+# Function to load environment variables
 load_env() {
-    # Obtener el directorio base del proyecto
+    # Get the project's base directory
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
     CONFIG_DIR="$PROJECT_ROOT/config"
     
-    # Cargar variables de entorno desde config/.env si existe
+    # Load environment variables from config/.env if it exists
     if [ -f "$CONFIG_DIR/.env" ]; then
-        log_message "info" "Cargando variables de entorno desde archivo $CONFIG_DIR/.env"
+        log_message "info" "Loading environment variables from file $CONFIG_DIR/.env"
         set -a
         . "$CONFIG_DIR/.env"
         set +a
     else
-        log_message "warn" "Archivo $CONFIG_DIR/.env no encontrado, usando valores por defecto"
+        log_message "warn" "File $CONFIG_DIR/.env not found, using default values"
     fi
     
-    # Establecer valor por defecto para BACKUP_DIR
+    # Set default value for BACKUP_DIR
     BACKUP_DIR="${BACKUP_DIR:-backups}"
     
-    # Si BACKUP_DIR no es una ruta absoluta, hacerla relativa al directorio del proyecto
+    # If BACKUP_DIR is not an absolute path, make it relative to the project directory
     if [[ "$BACKUP_DIR" != /* ]]; then
         BACKUP_DIR="$PROJECT_ROOT/$BACKUP_DIR"
     fi
 }
 
-# Función para listar los backups disponibles
+# Function to list available backups
 list_backups() {
     local backup_dir="$1"
     
-    log_message "title" "Backups disponibles"
+    log_message "title" "Available backups"
     
-    # Verificar si el directorio de backup existe
+    # Check if the backup directory exists
     if [ ! -d "$backup_dir" ]; then
-        log_message "info" "El directorio de backup '$backup_dir' no existe"
+        log_message "info" "Backup directory '$backup_dir' does not exist"
         mkdir -p "$backup_dir"
     fi
     
-    # Buscar archivos .sql y .sql.gz
+    # Search for .sql and .sql.gz files
     local files=($(find "$backup_dir" -type f \( -name "*.sql" -o -name "*.sql.gz" \) | sort -r))
     
     if [ ${#files[@]} -eq 0 ]; then
-        log_message "warn" "No se encontraron archivos de backup"
+        log_message "warn" "No backup files found"
         return 0
     fi
     
-    echo -e "${YELLOW}ID\tFecha\t\tTamaño\t\tBase de datos\tArchivo${NC}"
+    echo -e "${YELLOW}ID\tDate\t\tSize\t\tDatabase\tFile${NC}"
     
     for i in "${!files[@]}"; do
         local file="${files[$i]}"
@@ -152,11 +152,11 @@ list_backups() {
     return 0
 }
 
-# Función para crear un backup
+# Function to create a backup
 do_backup() {
-    log_message "title" "Creación de backup"
+    log_message "title" "Backup creation"
     
-    # Procesar los argumentos
+    # Process arguments
     local db_name=""
     local backup_dir="$BACKUP_DIR"
     local db_host=""
@@ -203,77 +203,79 @@ do_backup() {
             shift
             ;;
             *)
-            log_message "warn" "Opción desconocida: $1"
+            log_message "warn" "Unknown option: $1"
             shift
             ;;
         esac
     done
     
-    # Si DB_NAME no se especificó como argumento, usar el valor de .env
+    # If DB_NAME was not specified as an argument, use the value from .env
     if [ -z "$db_name" ]; then
-        # Verificar si DB_NAME está definido en .env
+        # Check if DB_NAME is defined in .env
         if [ -z "${DB_NAME}" ]; then
-            log_message "error" "No se ha especificado la base de datos. Usa -db o define DB_NAME en .env"
-            mkdir -p "$backup_dir"
+            log_message "error" "Database not specified. Use -db or define DB_NAME in .env"
+            mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+            return 1 # Indicate failure
         else
             db_name="${DB_NAME}"
-            log_message "info" "Usando base de datos definida en .env: $db_name"
+            log_message "info" "Using database defined in .env: $db_name"
         fi
     fi
     
-    # Configuración de la base de datos
-    # Prioridad: 1. Parámetros de línea de comandos, 2. Variables de entorno, 3. Valores por defecto
+    # Database configuration
+    # Priority: 1. Command line parameters, 2. Environment variables, 3. Default values
     local db_host="${db_host:-${DB_HOST:-localhost}}"
     local db_port="${db_port:-${DB_PORT:-5432}}"
     local db_user="${db_user:-${DB_USER:-postgres}}"
     local db_password="${db_password:-${DB_PASSWORD:-postgres}}"
     
-    # Crear directorio de backup si no existe
+    # Create backup directory if it doesn't exist
     if [ ! -d "$backup_dir" ]; then
-        log_message "info" "Creando directorio de backup: $backup_dir"
+        log_message "info" "Creating backup directory: $backup_dir"
         mkdir -p "$backup_dir"
     fi
     
-    # Fecha y hora
+    # Date and time
     local timestamp=$(date "+%Y%m%d%H%M%S")
     
-    # Nombre del archivo de backup
+    # Backup file name
     local backup_file="$backup_dir/${db_name}_$timestamp.sql"
     
-    # Verificar si pg_dump está instalado
+    # Check if pg_dump is installed
     if ! command -v pg_dump &> /dev/null; then
-        log_message "error" "pg_dump no está instalado. Por favor, instala PostgreSQL client tools."
-        mkdir -p "$backup_dir"
+        log_message "error" "pg_dump is not installed. Please install PostgreSQL client tools."
+        mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+        return 1 # Indicate failure
     fi
     
-    # Mensaje de inicio
-    log_message "info" "Realizando backup de la base de datos $db_name en $backup_file"
+    # Start message
+    log_message "info" "Performing backup of database $db_name to $backup_file"
     
-    # Comando para hacer el backup con manejo de errores
+    # Command to perform the backup with error handling
     if PGPASSWORD=$db_password pg_dump -h $db_host -p $db_port -U $db_user -F p -b -v -f "$backup_file" "$db_name"; then
-        # Verificar tamaño del archivo
+        # Check file size
         local backup_size=$(du -h "$backup_file" | cut -f1)
-        log_message "info" "Backup de la base de datos $db_name realizado con éxito (Tamaño: $backup_size)"
+        log_message "info" "Database backup $db_name completed successfully (Size: $backup_size)"
         
-        # Comprimir el archivo si está habilitado
+        # Compress the file if enabled
         local compress_backup=${COMPRESS_BACKUP:-true}
         
         if [ "$compress_backup" = true ]; then
-            log_message "info" "Comprimiendo archivo de backup..."
+            log_message "info" "Compressing backup file..."
             gzip -f "$backup_file"
             local compressed_size=$(du -h "$backup_file.gz" | cut -f1)
-            log_message "info" "Archivo comprimido: $backup_file.gz (Tamaño: $compressed_size)"
-            # Actualizar el nombre del archivo para referencias posteriores
+            log_message "info" "Compressed file: $backup_file.gz (Size: $compressed_size)"
+            # Update file name for later references
             backup_file="$backup_file.gz"
         else
-            log_message "info" "Compresión de backup desactivada"
+            log_message "info" "Backup compression disabled"
         fi
         
-        # Eliminar archivos de backup antiguos (mayores a los días de retención)
+        # Delete old backup files (older than retention days)
         local retention_days=${RETENTION_DAYS:-7}
-        log_message "info" "Eliminando archivos de backup antiguos (mayores a $retention_days días)"
+        log_message "info" "Deleting old backup files (older than $retention_days days)"
         
-        # Determinar el patrón de búsqueda según si se comprimió o no
+        # Determine search pattern based on whether compression was used
         local search_pattern
         if [ "$compress_backup" = true ]; then
             search_pattern="*.sql.gz"
@@ -283,24 +285,25 @@ do_backup() {
         
         find "$backup_dir" -type f -name "$search_pattern" -mtime +"$retention_days" -exec rm {} \;
         
-        # Contar backups restantes
+        # Count remaining backups
         local backup_count=$(find "$backup_dir" -type f -name "$search_pattern" | wc -l)
-        log_message "info" "Backups disponibles: $backup_count"
+        log_message "info" "Available backups: $backup_count"
         
-        # Mensaje final
-        log_message "info" "Proceso de backup finalizado con éxito"
+        # Final message
+        log_message "info" "Backup process finished successfully"
         return 0
     else
-        log_message "error" "Error al realizar el backup de la base de datos $db_name"
-        mkdir -p "$backup_dir"
+        log_message "error" "Error performing backup of database $db_name"
+        mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+        return 1 # Indicate failure
     fi
 }
 
-# Función para restaurar un backup
+# Function to restore a backup
 do_restore() {
-    log_message "title" "Restauración de backup"
+    log_message "title" "Backup restoration"
     
-    # Procesar los argumentos
+    # Process arguments
     local db_name=""
     local backup_file=""
     local backup_dir="$BACKUP_DIR"
@@ -353,92 +356,97 @@ do_restore() {
             shift
             ;;
             *)
-            log_message "warn" "Opción desconocida: $1"
+            log_message "warn" "Unknown option: $1"
             shift
             ;;
         esac
     done
     
-    # Si DB_NAME no se especificó como argumento, usar el valor de .env
+    # If DB_NAME was not specified as an argument, use the value from .env
     if [ -z "$db_name" ]; then
-        # Verificar si DB_NAME está definido en .env
+        # Check if DB_NAME is defined in .env
         if [ -z "${DB_NAME}" ]; then
-            log_message "error" "No se ha especificado la base de datos. Usa -db o define DB_NAME en .env"
-            mkdir -p "$backup_dir"
+            log_message "error" "Database not specified. Use -db or define DB_NAME in .env"
+            mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+            return 1 # Indicate failure
         else
             db_name="${DB_NAME}"
-            log_message "info" "Usando base de datos definida en .env: $db_name"
+            log_message "info" "Using database defined in .env: $db_name"
         fi
     fi
     
-    # Configuración de la base de datos
-    # Prioridad: 1. Parámetros de línea de comandos, 2. Variables de entorno, 3. Valores por defecto
+    # Database configuration
+    # Priority: 1. Command line parameters, 2. Environment variables, 3. Default values
     local db_host="${db_host:-${DB_HOST:-localhost}}"
     local db_port="${db_port:-${DB_PORT:-5432}}"
     local db_user="${db_user:-${DB_USER:-postgres}}"
     local db_password="${db_password:-${DB_PASSWORD:-postgres}}"
     
-    # Verificar si el directorio de backup existe
+    # Check if the backup directory exists
     if [ ! -d "$backup_dir" ]; then
-        log_message "info" "El directorio de backup '$backup_dir' no existe"
-        mkdir -p "$backup_dir"
+        log_message "info" "Backup directory '$backup_dir' does not exist"
+        mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+        # It might be an error if the specified backup path doesn't exist when a file is also specified.
+        # However, if no file is specified, we might be looking for the latest in this non-existent dir.
+        # For now, let's assume it's not a fatal error here, it will be caught later if no file is found.
     fi
     
-    # Si no se especificó un archivo de backup, buscar el más reciente para la base de datos
+    # If no backup file was specified, search for the most recent one for the database
     if [ -z "$backup_file" ]; then
-        log_message "info" "Buscando el backup más reciente para la base de datos $db_name"
+        log_message "info" "Searching for the most recent backup for database $db_name"
         
-        # Buscar el archivo más reciente (primero .sql.gz, luego .sql)
+        # Search for the most recent file (first .sql.gz, then .sql)
         backup_file=$(find "$backup_dir" -type f \( -name "${db_name}_*.sql.gz" -o -name "${db_name}_*.sql" \) | sort -r | head -n 1)
         
         if [ -z "$backup_file" ]; then
-            log_message "error" "No se encontró ningún backup para la base de datos $db_name"
-            mkdir -p "$backup_dir"
+            log_message "error" "No backup found for database $db_name"
+            mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
             return 1
         fi
         
-        log_message "info" "Se usará el backup más reciente: $(basename "$backup_file")"
+        log_message "info" "Using the most recent backup: $(basename "$backup_file")"
     else
-        # Si se especificó un archivo, verificar si es una ruta completa, relativa o solo el nombre
+        # If a file was specified, check if it's an absolute path, relative, or just the name
         if [[ "$backup_file" == /* ]]; then
-            # Es una ruta absoluta, usarla tal cual
-            :  # No hacer nada, usar la ruta tal cual
+            # It's an absolute path, use it as is
+            :  # Do nothing, use the path as is
         elif [[ "$backup_file" == ./* ]] || [[ "$backup_file" == ../* ]]; then
-            # Es una ruta relativa, convertirla a absoluta desde el directorio actual
+            # It's a relative path, convert it to absolute from the current directory
             backup_file="$(cd "$(dirname "$backup_file")" && pwd)/$(basename "$backup_file")"
         else
-            # Es solo un nombre de archivo, añadir la ruta del directorio de backups
+            # It's just a file name, add the backup directory path
             backup_file="$backup_dir/$backup_file"
         fi
         
-        # Verificar si el archivo existe
+        # Check if the file exists
         if [ ! -f "$backup_file" ]; then
-            log_message "error" "El archivo de backup '$backup_file' no existe"
-            mkdir -p "$backup_dir"
+            log_message "error" "Backup file '$backup_file' does not exist"
+            mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
             return 1
         fi
     fi
     
-    # Verificar si psql está instalado
+    # Check if psql is installed
     if ! command -v psql &> /dev/null; then
-        log_message "error" "psql no está instalado. Por favor, instala PostgreSQL client tools."
-        mkdir -p "$backup_dir"
+        log_message "error" "psql is not installed. Please install PostgreSQL client tools."
+        mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+        return 1 # Indicate failure
     fi
     
-    # Preguntar confirmación antes de restaurar
-    log_message "warn" "¡ATENCIÓN! Estás a punto de restaurar la base de datos $db_name con el backup: $(basename "$backup_file")"
-    log_message "warn" "Esto sobrescribirá TODOS los datos existentes en la base de datos $db_name"
-    read -p "¿Estás seguro de que deseas continuar? (s/N): " confirm
-    if [[ ! "$confirm" =~ ^[sS]$ ]]; then
-        log_message "info" "Operación cancelada por el usuario"
+    # Ask for confirmation before restoring
+    log_message "warn" "ATTENTION! You are about to restore database $db_name with backup: $(basename "$backup_file")"
+    log_message "warn" "This will overwrite ALL existing data in database $db_name"
+    read -p "Are you sure you want to continue? (y/N): " confirm
+    if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+        log_message "info" "Operation cancelled by the user"
         return 0
     fi
     
-    # Descomprimir el archivo si es necesario
+    # Decompress the file if necessary
     local temp_file=""
     local restore_file=""
     if [[ "$backup_file" == *.gz ]]; then
-        log_message "info" "Descomprimiendo archivo de backup..."
+        log_message "info" "Decompressing backup file..."
         temp_file="/tmp/$(basename "$backup_file" .gz)"
         gunzip -c "$backup_file" > "$temp_file"
         restore_file="$temp_file"
@@ -446,76 +454,78 @@ do_restore() {
         restore_file="$backup_file"
     fi
     
-    # Mensaje de inicio
-    log_message "info" "Iniciando restauración de la base de datos $db_name desde $(basename "$backup_file")"
+    # Start message
+    log_message "info" "Starting restoration of database $db_name from $(basename "$backup_file")"
     
-    # Intentar crear la base de datos si no existe
-    log_message "info" "Verificando si la base de datos existe..."
+    # Try to create the database if it doesn't exist
+    log_message "info" "Checking if the database exists..."
     if ! PGPASSWORD=$db_password psql -h $db_host -p $db_port -U $db_user -lqt | cut -d \| -f 1 | grep -qw $db_name; then
-        log_message "info" "La base de datos $db_name no existe, creándola..."
+        log_message "info" "Database $db_name does not exist, creating it..."
         if ! PGPASSWORD=$db_password createdb -h $db_host -p $db_port -U $db_user $db_name; then
-            log_message "error" "No se pudo crear la base de datos $db_name"
-            # Limpiar archivo temporal si existe
+            log_message "error" "Could not create database $db_name"
+            # Clean up temporary file if it exists
             [ -n "$temp_file" ] && rm -f "$temp_file"
-            mkdir -p "$backup_dir"
+            mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+            return 1 # Indicate failure
         fi
     else
-        # Si la base de datos existe, verificar si hay conexiones activas
-        log_message "info" "Verificando conexiones activas a la base de datos..."
+        # If the database exists, check for active connections
+        log_message "info" "Checking for active connections to the database..."
         local active_connections=$(PGPASSWORD=$db_password psql -h $db_host -p $db_port -U $db_user -c "SELECT count(*) FROM pg_stat_activity WHERE datname = '$db_name' AND pid <> pg_backend_pid();" -t | tr -d ' ')
         
         if [ "$active_connections" -gt 0 ]; then
-            log_message "warn" "Hay $active_connections conexiones activas a la base de datos. Se recomienda cerrarlas antes de continuar."
-            read -p "¿Deseas continuar de todos modos? (s/N): " confirm
-            if [[ ! "$confirm" =~ ^[sS]$ ]]; then
-                log_message "info" "Operación cancelada por el usuario"
-                # Limpiar archivo temporal si existe
+            log_message "warn" "There are $active_connections active connections to the database. It is recommended to close them before continuing."
+            read -p "Do you want to continue anyway? (y/N): " confirm
+            if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+                log_message "info" "Operation cancelled by the user"
+                # Clean up temporary file if it exists
                 [ -n "$temp_file" ] && rm -f "$temp_file"
                 return 0
             fi
         fi
     fi
     
-    # Comando para restaurar la base de datos
-    log_message "info" "Restaurando la base de datos $db_name..."
+    # Command to restore the database
+    log_message "info" "Restoring database $db_name..."
     
     if PGPASSWORD=$db_password psql -h $db_host -p $db_port -U $db_user -d $db_name -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" &>/dev/null; then
-        log_message "info" "Esquema público reiniciado correctamente"
+        log_message "info" "Public schema reset successfully"
     else
-        log_message "warn" "No se pudo reiniciar el esquema público, intentando restaurar de todos modos"
+        log_message "warn" "Could not reset public schema, attempting to restore anyway"
     fi
     
-    # Restaurar la base de datos
+    # Restore the database
     if PGPASSWORD=$db_password psql -h $db_host -p $db_port -U $db_user -d $db_name -f "$restore_file"; then
-        log_message "info" "Restauración de la base de datos $db_name completada con éxito"
+        log_message "info" "Database restoration $db_name completed successfully"
     else
-        log_message "error" "Error al restaurar la base de datos $db_name"
-        # Limpiar archivo temporal si existe
+        log_message "error" "Error restoring database $db_name"
+        # Clean up temporary file if it exists
         [ -n "$temp_file" ] && rm -f "$temp_file"
-        mkdir -p "$backup_dir"
+        mkdir -p "$backup_dir" # Ensure backup_dir is created before exiting or returning
+        return 1 # Indicate failure
     fi
     
-    # Limpiar archivo temporal si existe
+    # Clean up temporary file if it exists
     if [ -n "$temp_file" ]; then
-        log_message "info" "Eliminando archivo temporal..."
+        log_message "info" "Deleting temporary file..."
         rm -f "$temp_file"
     fi
     
-    log_message "info" "Proceso de restauración finalizado con éxito"
+    log_message "info" "Restoration process finished successfully"
     return 0
 }
 
-# Función principal
+# Main function
 main() {
-    # Si no se proporcionaron argumentos, mostrar la ayuda
+    # If no arguments were provided, show help
     if [ $# -eq 0 ]; then
         show_help
     fi
     
-    # Cargar variables de entorno
+    # Load environment variables
     load_env
     
-    # Procesar el comando principal
+    # Process the main command
     command="$1"
     shift
     
@@ -533,7 +543,7 @@ main() {
             show_help
             ;;
         *)
-            log_message "error" "Comando desconocido: $command"
+            log_message "error" "Unknown command: $command"
             show_help
             ;;
     esac
@@ -541,5 +551,5 @@ main() {
     exit $?
 }
 
-# Ejecutar la función principal
+# Execute the main function
 main "$@"

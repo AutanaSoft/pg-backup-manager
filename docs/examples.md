@@ -1,16 +1,16 @@
-# Ejemplos de Uso Avanzados
+# Advanced Usage Examples
 
-Este documento proporciona ejemplos avanzados de uso para el Gestor de Bases de Datos PostgreSQL.
+This document provides advanced usage examples for the PostgreSQL Database Manager.
 
-## Escenarios de Backup
+## Backup Scenarios
 
-### Backup de múltiples bases de datos
+### Backup of multiple databases
 
-Para hacer backup de varias bases de datos en secuencia:
+To back up multiple databases in sequence:
 
 ```bash
 #!/bin/bash
-# Script para hacer backup de múltiples bases de datos
+# Script to back up multiple databases
 
 DATABASES=("db1" "db2" "db3")
 for db in "${DATABASES[@]}"; do
@@ -18,94 +18,108 @@ for db in "${DATABASES[@]}"; do
 done
 ```
 
-### Backup con rotación personalizada
+### Backup with custom rotation
 
-Para implementar una estrategia de rotación personalizada:
+To implement a custom rotation strategy:
 
 ```bash
 #!/bin/bash
-# Mantener backups diarios durante una semana, semanales durante un mes y mensuales durante un año
+# Keep daily backups for a week, weekly for a month, and monthly for a year
 
-# Backup diario
-../bin/db_manager.sh backup -db mi_base_datos
+# Daily backup
+# This backup will go to the default path (e.g., 'backups/' or as configured in .env)
+../bin/db_manager.sh backup -db my_database
 
-# Backup semanal (cada domingo)
+# Weekly backup (every Sunday)
 if [ "$(date +%u)" = "7" ]; then
-  ../bin/db_manager.sh backup -db mi_base_datos -path backups/weekly
+  ../bin/db_manager.sh backup -db my_database -path backups/weekly
 fi
 
-# Backup mensual (primer día del mes)
-if [ "$(date +%d)" = "01" ]; then
-  ../bin/db_manager.sh backup -db mi_base_datos -path backups/monthly
+# Monthly backup (first day of the month)
+if [ "$(date +%d)" = "01"; then
+  ../bin/db_manager.sh backup -db my_database -path backups/monthly
 fi
 ```
+Note: For the daily backup, if you want it in a specific subdirectory like `backups/daily`, add the `-path backups/daily` option to the command.
 
-## Escenarios de Restauración
+### Backup relying on .env configuration
 
-### Restauración a un servidor de desarrollo
+If you have configured your `DB_NAME` and connection parameters (host, user, port, password) in the `config/.env` file, you can run a backup with a very simple command:
 
-Para restaurar un backup de producción a un entorno de desarrollo:
+```bash
+# Assumes DB_NAME, DB_HOST, DB_USER, DB_PASSWORD, DB_PORT are set in config/.env
+# Also uses default BACKUP_DIR or the one set in .env
+../bin/db_manager.sh backup
+```
+This will back up the database specified by `DB_NAME` in your `.env` file to the configured backup path.
+
+## Restore Scenarios
+
+### Restore to a development server
+
+To restore a production backup to a development environment:
 
 ```bash
 ../bin/db_manager.sh restore -db dev_database \
   -file production_20250419123456.sql.gz \
   -host dev-server \
+  -port 5433 \
   -user dev_user \
-  -password dev_password
+  -pass dev_password
 ```
 
-### Restauración con transformación de datos
+### Restore with data transformation
 
-Para restaurar y luego anonimizar datos sensibles:
+To restore and then anonymize sensitive data:
 
 ```bash
 #!/bin/bash
-# Restaurar y luego anonimizar datos para entorno de pruebas
+# Restore and then anonymize data for testing environment
 
-# Primero restauramos el backup
+# First, restore the backup
 ../bin/db_manager.sh restore -db test_db -file production_backup.sql.gz
 
-# Luego ejecutamos script de anonimización
+# Then, run the anonymization script
 PGPASSWORD=password psql -h localhost -U postgres -d test_db -f anonymize_data.sql
 ```
 
-## Integración con Otras Herramientas
+## Integration with Other Tools
 
-### Notificaciones por correo electrónico
+### Email notifications
 
-Para enviar notificaciones por correo después de un backup:
+To send email notifications after a backup:
 
 ```bash
 #!/bin/bash
-# Backup con notificación por correo
+# Backup with email notification
 
 LOG_FILE="/tmp/backup_log.txt"
 
-# Ejecutar backup y guardar salida en archivo de log
-../bin/db_manager.sh backup -db mi_base_datos > "$LOG_FILE" 2>&1
+# Execute backup and save output to log file
+../bin/db_manager.sh backup -db my_database > "$LOG_FILE" 2>&1
 BACKUP_STATUS=$?
 
-# Enviar correo con el resultado
+# Send email with the result
 if [ $BACKUP_STATUS -eq 0 ]; then
-  mail -s "Backup completado con éxito" admin@example.com < "$LOG_FILE"
+  mail -s "Backup completed successfully" admin@example.com < "$LOG_FILE"
 else
-  mail -s "ERROR en backup" admin@example.com < "$LOG_FILE"
+  mail -s "ERROR in backup" admin@example.com < "$LOG_FILE"
 fi
 ```
 
-### Integración con monitoreo
+### Integration with monitoring
 
-Para integrar con sistemas de monitoreo:
+To integrate with monitoring systems:
 
 ```bash
 #!/bin/bash
-# Integración con sistema de monitoreo
+# Integration with monitoring system
 
 START_TIME=$(date +%s)
-../bin/db_manager.sh backup -db mi_base_datos
+../bin/db_manager.sh backup -db my_database
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
-# Enviar métrica a sistema de monitoreo
+# Send metric to monitoring system
 echo "backup.duration $DURATION $(date +%s)" | nc -w 1 metrics-server 2003
 ```

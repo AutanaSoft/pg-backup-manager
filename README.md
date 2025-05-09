@@ -1,217 +1,258 @@
-# Gestor de Bases de Datos PostgreSQL
+# PostgreSQL Database Manager
 
-Este script integrado automatiza el proceso de respaldo y restauración de bases de datos PostgreSQL, con una interfaz de subcomandos fácil de usar.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![ShellCheck](https://img.shields.io/badge/shellcheck-passing-brightgreen.svg)](https://www.shellcheck.net/)
 
-## Características
+This integrated script automates the process of backing up and restoring PostgreSQL databases, with an easy-to-use subcommand interface.
 
-### Generales
-- Interfaz de subcomandos intuitiva (backup, restore, list)
-- Configuración flexible a través de variables de entorno o argumentos de línea de comandos
-- Mensajes con colores para mejor legibilidad
-- Manejo de errores robusto
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Help](#help)
+  - [Create a backup](#create-a-backup)
+  - [List available backups](#list-available-backups)
+  - [Restore a backup](#restore-a-backup)
+- [Advanced Usage](#advanced-usage)
+- [Configuration via .env file](#configuration-via-env-file)
+- [Configuration priority order](#configuration-priority-order)
+- [Security](#security)
+- [Tests](#tests)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+### General
+- Intuitive subcommand interface (backup, restore, list)
+- Flexible configuration through environment variables or command-line arguments
+- Color-coded messages for better readability
+- Robust error handling
 
 ### Backup
-- Realiza backups completos de bases de datos PostgreSQL
-- Compresión opcional de archivos de backup (configurable)
-- Nombra los archivos con marcas de tiempo para fácil identificación
-- Elimina automáticamente backups antiguos (período configurable)
+- Performs full backups of PostgreSQL databases
+- Optional compression of backup files (configurable)
+- Names files with timestamps for easy identification
+- Automatically deletes old backups (configurable period)
 
-### Restauración
-- Restaura backups a la misma base de datos o a una diferente
-- Selección automática del backup más reciente
-- Manejo de archivos comprimidos y sin comprimir
-- Verificación de conexiones activas antes de restaurar
+### Restore
+- Restores backups to the same or a different database
+- Automatic selection of the most recent backup
+- Handles compressed and uncompressed files
+- Checks for active connections before restoring
 
-## Requisitos
+## Requirements
 
 - PostgreSQL Client (pg_dump, psql, createdb)
 - Bash shell
-- Utilidades estándar de Unix (find, gzip, gunzip)
-- Permisos de lectura/escritura en las bases de datos
-- Permisos de escritura en el directorio de destino
+- Standard Unix utilities (find, gzip, gunzip)
+- Read/write permissions on the databases
+- Write permissions in the destination directory
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 /
-├── bin/                  # Scripts ejecutables
-│   └── db_manager.sh     # Script principal
-├── config/               # Archivos de configuración
-│   ├── .env.example      # Plantilla de variables de entorno
-│   └── .env              # Variables de entorno reales (no incluido en git)
-├── docs/                 # Documentación adicional
-│   └── examples.md       # Ejemplos de uso avanzados
-├── tests/                # Pruebas unitarias y de integración
-│   └── test_backup.sh    # Pruebas para la funcionalidad de backup
-├── .gitignore            # Archivos a ignorar por git
-├── CONTRIBUTING.md       # Guía de contribución
-├── LICENSE               # Licencia MIT
-└── README.md             # Esta documentación
+├── bin/                  # Executable scripts
+│   └── db_manager.sh     # Main script
+├── config/               # Configuration files
+│   ├── .env.example      # Environment variable template
+│   └── .env              # Actual environment variables (not included in git)
+├── docs/                 # Additional documentation
+│   └── examples.md       # Advanced usage examples
+├── tests/                # Unit and integration tests
+│   └── test_backup.sh    # Tests for backup functionality
+├── .gitignore            # Files to ignore by git
+├── CONTRIBUTING.md       # Contribution guide
+├── LICENSE               # MIT License
+└── README.md             # This documentation
 ```
 
-## Instalación
+## Installation
 
-1. Clona este repositorio:
+**Prerequisites:**
+- `git` (for cloning the repository)
+
+1. Clone this repository (replace `<your-repository-url>` with the actual URL or use the one for this project):
    ```bash
-   git clone https://github.com/tu-usuario/nombre-del-repo.git
-   cd nombre-del-repo
+   git clone git@github.com:AutanaSoft/pg-backup-manager.git
+   cd pg-backup-manager
    ```
 
-2. Haz el script ejecutable:
+2. Make the script executable:
    ```bash
    chmod +x bin/db_manager.sh
    ```
 
-3. Copia el archivo de ejemplo de variables de entorno:
+3. Copy the example environment variables file:
    ```bash
    cp config/.env.example config/.env
    ```
 
-4. Edita el archivo `config/.env` con tus credenciales de base de datos:
+4. Edit the `config/.env` file with your database credentials:
    ```bash
    nano config/.env
    ```
 
-## Uso
+## Usage
 
-El script utiliza una interfaz de subcomandos similar a herramientas como git:
+The script uses a subcommand interface similar to tools like git:
 
 ```bash
-./bin/db_manager.sh <comando> [opciones]
+./bin/db_manager.sh <command> [options]
 ```
 
-Donde `<comando>` puede ser:
-- `backup`: Crear un backup de una base de datos
-- `restore`: Restaurar un backup a una base de datos
-- `list`: Listar los backups disponibles
-- `help`: Mostrar ayuda general
+For more complex scenarios and advanced examples, please refer to the [Advanced Usage Examples](docs/examples.md) document.
 
-### Ayuda
+Where `<command>` can be:
+- `backup`: Create a database backup
+- `restore`: Restore a backup to a database
+- `list`: List available backups
+- `help`: Show general help
+
+### Help
 
 ```bash
-# Ayuda general
+# General help
 ./bin/db_manager.sh help
 
-# Ayuda específica para un comando
+# Specific help for a command
 ./bin/db_manager.sh backup -h
 ./bin/db_manager.sh restore -h
 ```
 
-### Crear un backup
+### Create a backup
 
 ```bash
-# Backup básico
-./bin/db_manager.sh backup -db nombre_base_datos
+# Basic backup specifying the database name
+./bin/db_manager.sh backup -db database_name
 
-# Backup con opciones adicionales
-./bin/db_manager.sh backup -db nombre_base_datos -path /ruta/backups -host 192.168.1.100 -user admin -pass secreto
+# Backup relying on DB_NAME from config/.env file
+# (Assumes DB_NAME is set in config/.env)
+./bin/db_manager.sh backup
+
+# Backup with additional options (overrides .env values for these options)
+./bin/db_manager.sh backup -db database_name -path /path/to/backups -host 192.168.1.100 -user admin -pass secret
 ```
 
-Opciones disponibles:
-- `-db`: Nombre de la base de datos a respaldar (obligatorio si no está en .env)
-- `-path`: Ruta donde se guardarán los backups (por defecto: 'backups')
-- `-host`: Host de la base de datos
-- `-port`: Puerto de la base de datos
-- `-user`: Usuario de la base de datos
-- `-pass`: Contraseña de la base de datos
+Available options:
+- `-db`: Name of the database to back up. If `DB_NAME` is set in `config/.env`, this option is not strictly mandatory; if omitted, the `.env` value will be used. If provided, it overrides the `.env` value for this specific command.
+- `-path`: Path where backups will be saved (default: 'backups')
+- `-host`: Database host
+- `-port`: Database port
+- `-user`: Database user
+- `-pass`: Database password
 
-### Listar backups disponibles
+### List available backups
 
 ```bash
 ./bin/db_manager.sh list
 ```
 
-### Restaurar un backup
+This command will output a list of available backup files found in the configured backup directory. Example output:
+
+```
+[INFO] 2025-05-09 10:00:00 - Loading environment variables from file /home/user/projects/pg-backup-manager/config/.env
+
+=== Available backups ===
+
+ID      Date                    Size            Database        File
+0       2025-05-09 07:16:06     1.2M            app_pro         app_pro_20250509071606.sql.gz
+1       2025-05-09 07:15:36     850K            app_dev         app_dev_20250509071536.sql.gz
+2       2025-05-09 07:00:47     849K            app_dev         app_dev_20250509070047.sql.gz
+3       2025-05-09 06:59:56     1.1M            app_pro         app_pro_20250509065956.sql.gz
+
+```
+
+### Restore a backup
 
 ```bash
-# Restaurar el backup más reciente
-./bin/db_manager.sh restore -db nombre_base_datos
+# Restore the most recent backup
+./bin/db_manager.sh restore -db database_name
 
-# Restaurar un archivo específico
-./bin/db_manager.sh restore -db nombre_base_datos -file nombre_archivo.sql.gz
+# Restore a specific file
+./bin/db_manager.sh restore -db database_name -file file_name.sql.gz
 
-# Restaurar a un servidor diferente
-./bin/db_manager.sh restore -db nueva_db -file backup.sql.gz -host otro_servidor -user otro_usuario -pass otra_clave
+# Restore to a different server
+./bin/db_manager.sh restore -db new_db -file backup.sql.gz -host other_server -user other_user -pass other_key
 ```
 
-Opciones disponibles:
-- `-db`: Nombre de la base de datos a restaurar (obligatorio si no está en .env)
-- `-file`: Archivo de backup a restaurar (si no se especifica, usa el más reciente)
-- `-path`: Ruta donde se encuentran los backups (por defecto: 'backups')
-- `-host`: Host de la base de datos
-- `-port`: Puerto de la base de datos
-- `-user`: Usuario de la base de datos
-- `-pass`: Contraseña de la base de datos
-2. Ejecuta el script con los argumentos requeridos
+Available options:
+- `-db`: Name of the database to restore. If `DB_NAME` is set in `config/.env`, this option is not strictly mandatory for restoring to that default database; if omitted, the `.env` value will be used. If provided, it overrides the `.env` value for this specific command.
+- `-file`: Backup file to restore (if not specified, uses the most recent for the given database name)
+- `-path`: Path where backups are located (default: 'backups')
+- `-host`: Database host
+- `-port`: Database port
+- `-user`: Database user
+- `-pass`: Database password
 
-## Configuración mediante archivo .env
+## Advanced Usage
 
-El script puede configurarse mediante un archivo `config/.env` con las siguientes variables:
+For more advanced usage examples, such as cron job automation, restoring to different environments, and integration with other tools, please see the [Advanced Usage Examples document](docs/examples.md).
+
+## Configuration via .env file
+
+The script can be configured using a `config/.env` file located in the `config/` directory. The following variables can be set:
 
 ```
-# Configuración de la base de datos
+# Database configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 
-# Base de datos por defecto para hacer backup/restore
-DB_NAME=nombre_base_datos
+# Default database for backup/restore
+DB_NAME=database_name
 
-# Días de retención para backups antiguos (opcional, por defecto: 7)
+# Retention days for old backups (optional, default: 7)
 RETENTION_DAYS=7
 
-# Comprimir el archivo de backup (opcional, por defecto: true)
+# Compress the backup file (optional, default: true)
 COMPRESS_BACKUP=true
 
-# Directorio para guardar los backups (opcional, por defecto: 'backups')
+# Directory to save backups (optional, default: 'backups')
+# If a relative path is used, it's relative to the project's root directory.
 BACKUP_DIR=backups
 ```
 
-## Orden de prioridad para configuraciones
+## Configuration priority order
 
-El script utiliza el siguiente orden de prioridad para determinar los valores a usar:
+The script uses the following priority order to determine the values to use:
 
-1. Parámetros de línea de comandos (máxima prioridad)
-2. Variables definidas en el archivo `.env`
-3. Valores predeterminados del script (mínima prioridad)
+1. Command-line parameters (highest priority)
+2. Variables defined in the `.env` file
+3. Script default values (lowest priority)
 
-## Seguridad
+## Security
 
-- El archivo `config/.env` está incluido en `.gitignore` para evitar exponer credenciales
-- Se recomienda configurar permisos restrictivos en el archivo `config/.env`: `chmod 600 config/.env`
-- Las contraseñas nunca se muestran en los logs del script
-- Se solicita confirmación antes de realizar operaciones destructivas (como restaurar una base de datos)
+- The `config/.env` file, which may contain sensitive credentials, is included in `.gitignore` by default to prevent accidental commits.
+- It is highly recommended to set restrictive permissions on the `config/.env` file: `chmod 600 config/.env`
+- Passwords are never displayed in the script logs
+- Confirmation is requested before performing destructive operations (like restoring a database)
 
-## Ejemplos de uso avanzado
+## Tests
 
-### Backup automático mediante cron
+The project includes a basic test script `tests/test_backup.sh` to verify core backup and restore functionalities. 
 
-```bash
-# Backup diario a las 2 AM
-0 2 * * * /ruta/completa/a/bin/db_manager.sh backup -db mi_base_datos > /var/log/db_backup.log 2>&1
-```
-
-### Restaurar a una base de datos temporal para pruebas
-
-```bash
-./bin/db_manager.sh restore -db db_pruebas -file produccion_20250419123456.sql.gz -host localhost
-```
-
-## Pruebas
-
-El proyecto incluye un conjunto de pruebas básicas que puedes ejecutar para verificar que todo funciona correctamente:
-
+To run the tests:
+1. Ensure you have a test database configured or are prepared for the script to attempt to create one based on your `.env` settings (or defaults).
+2. Execute the script:
 ```bash
 ./tests/test_backup.sh
 ```
+Review the output of the script to ensure all tests pass as expected. The test script itself contains comments and can be modified to suit more specific testing scenarios.
 
-Para pruebas más avanzadas, consulta los comentarios en el archivo `tests/test_backup.sh`.
+## Additional Documentation
 
-## Documentación Adicional
+For more advanced examples and use cases, refer to the [Advanced Usage Examples document](docs/examples.md).
 
-Para ejemplos más avanzados y casos de uso, consulta la [documentación adicional](docs/examples.md).
+## Contributing
 
-## Licencia
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute to this project.
 
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

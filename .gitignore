@@ -1,33 +1,37 @@
-# Archivos de entorno con credenciales
+# Environment files with credentials
 config/.env
 
-# Archivos de backup generados
+# Generated backup files
 *.sql
 *.dump
 *.bak
 *.sql.gz
 
-# Directorios de backup
+# Backup directories
 backups/
 
-# Directorios de pruebas temporales
+# Temporary test directories
 tests/test_backups/
 
 # Logs
 *.log
 logs/
 
-# Archivos temporales
+# Temporary files
 *.tmp
 *.temp
 *~
 
-# Archivos del sistema operativo
+# Operating system files
 .DS_Store
 Thumbs.db
 
-# Directorios y archivos específicos de editores
+# Editor-specific directories and files
 .idea/
 .vscode/
 *.swp
 *.swo
+
+# Node.js / npm
+node_modules/
+# package-lock.json # Uncomment if you do not want to version this file

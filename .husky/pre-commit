@@ -1,1 +1,1 @@
-# npx shellcheck bin/db_manager.sh
+npx shellcheck bin/db_manager.sh

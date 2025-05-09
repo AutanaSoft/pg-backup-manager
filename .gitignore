@@ -6,6 +6,7 @@ config/.env
 *.dump
 *.bak
 *.sql.gz
+!tests/test_db_schema.sql # Ensure this specific SQL file is tracked
 
 # Backup directories
 backups/

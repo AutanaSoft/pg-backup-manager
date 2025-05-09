@@ -86,6 +86,7 @@ show_restore_help() {
     echo "  -port     Database port (optional, default: value in .env or 5432)"
     echo "  -user     Database user (optional, default: value in .env or postgres)"
     echo "  -pass     Database password (optional, default: value in .env or postgres)"
+    echo "  -y, --yes Skip confirmation prompt"
     echo "  -h        Show this help"
     echo ""
     exit 0
@@ -322,6 +323,7 @@ do_restore() {
     local db_port=""
     local db_user=""
     local db_password=""
+    local skip_confirmation=false
     
     while [[ $# -gt 0 ]]
     do
@@ -364,6 +366,10 @@ do_restore() {
             -pass)
             db_password="$2"
             shift
+            shift
+            ;;
+            -y|--yes)
+            skip_confirmation=true
             shift
             ;;
             *)
@@ -443,13 +449,17 @@ do_restore() {
     fi
     
     # Ask for confirmation before restoring
-    log_message "warn" "ATTENTION! You are about to restore database $db_name with backup: $(basename "$current_backup_file")"
-    log_message "warn" "This will overwrite ALL existing data in database $db_name"
-    local confirm
-    read -r -p "Are you sure you want to continue? (y/N): " confirm
-    if [[ ! "$confirm" =~ ^[yY]$ ]]; then
-        log_message "info" "Operation cancelled by the user"
-        return 0
+    if [ "$skip_confirmation" = false ]; then
+        log_message "warn" "ATTENTION! You are about to restore database $db_name with backup: $(basename "$current_backup_file")"
+        log_message "warn" "This will overwrite ALL existing data in database $db_name"
+        local confirm
+        read -r -p "Are you sure you want to continue? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+            log_message "info" "Operation cancelled by the user"
+            return 0
+        fi
+    else
+        log_message "info" "Confirmation prompt skipped due to -y/--yes flag."
     fi
     
     # Decompress the file if necessary
@@ -506,7 +516,7 @@ do_restore() {
     fi
     
     # Restore the database
-    if PGPASSWORD="$db_password" psql -h "$db_host" -p "$db_port" -U "$db_user" -d "$db_name" -f "$restore_file"; then
+    if PGPASSWORD="$db_password" psql -v ON_ERROR_STOP=1 -h "$db_host" -p "$db_port" -U "$db_user" -d "$db_name" -f "$restore_file"; then
         log_message "info" "Database restoration $db_name completed successfully"
     else
         log_message "error" "Error restoring database $db_name"
